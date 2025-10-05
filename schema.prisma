@@ -1,0 +1,321 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../prisma/generated"
+  engineType = "nodejs"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+generator pothos {
+    provider    = "prisma-pothos-types"
+    // Enable prismaUtils feature
+    prismaUtils = true
+    clientOutput = "@/prisma/generated"
+    output       = "../pothos/plugin-prisma/generated.ts"
+    generateDatamodel = true
+    documentation     = false
+}
+        
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum Visibility {
+  PRIVATE
+  TEAM
+  PUBLIC
+  LINK // accessible by secret link token
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+enum StepType {
+  UPLOAD
+  PARSE
+  PROFILING
+  CLEANING
+  COLUMN_DETECTION
+  SUMMARIZATION
+  CHART_RECOMMENDATION
+  TRANSFORM_GENERATION
+  CHART_CONFIG_GENERATION
+  RENDERING
+  ERROR
+}
+
+enum StepStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum FileKind {
+  CSV
+  XLSX
+}
+
+enum ChartLibrary {
+  ECHARTS
+  RECHARTS
+  CHARTJS
+  VEGA
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+
+  // ownership
+  folders   Folder[]
+  files     File[]
+  charts    Chart[]
+  conversations Conversation[]
+  teams Team[]
+  invitations TeamInvite[]
+  sharedLink ChartShareLink[]
+  createdChartVersion ChartVersion[]
+
+  // teams
+  teamMembers TeamMember[]
+  invited     TeamInvite[]   @relation("InviterInvites")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  createdBy User     @relation(fields: [createdById], references: [id])
+  createdById String
+
+  members   TeamMember[]
+  folders   Folder[]
+  files     File[]
+  charts    Chart[]
+  conversations Conversation[]
+  invites   TeamInvite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  team      Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  role      Role
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model TeamInvite {
+  id         String       @id @default(cuid())
+  team       Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId     String
+  email      String
+  role       Role         @default(VIEWER)
+  token      String       @unique // for link invites
+  status     InviteStatus @default(PENDING)
+  inviter    User         @relation("InviterInvites", fields: [inviterId], references: [id])
+  inviterId  String
+  expiresAt  DateTime?
+  acceptedBy User?        @relation(fields: [acceptedById], references: [id])
+  acceptedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  // Ownership can be user or team (one of them must be set)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  team      Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String?
+
+  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  children  Folder[]  @relation("FolderToFolder")
+
+  charts    Chart[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([parentId])
+  @@unique([userId, teamId, parentId, name]) // name unique per owner & parent
+}
+
+model File {
+  id        String   @id @default(cuid())
+  name      String
+  kind      FileKind
+  mimeType  String
+  size      Int
+  url       String    // S3/R2/Cloud storage URL
+  provider  String?   // e.g. "s3", "r2"
+  bucket    String?
+  key       String?   // object key
+  checksum  String?   // sha256 for dedupe
+
+  // Ownership
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  team      Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String?
+
+  // Linkage
+  conversations Conversation[]
+  charts    Chart[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([checksum])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String?
+
+  // context of the chat (either user or team)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  team      Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String?
+
+  file      File?    @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  fileId    String?
+
+  status    String   @default("active")
+  messages  Message[]
+  charts    Chart[] // charts created from this conversation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([fileId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  role           MessageRole
+  content        Json // {text, toolCalls, partials, etc}
+  model          String?
+  latencyMs      Int?
+  tokenIn        Int?
+  tokenOut       Int?
+  chart          Chart?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+model Chart {
+  id         String        @id @default(cuid())
+  title      String
+  library    ChartLibrary  @default(ECHARTS)
+  config     Json          // final chart config
+  dataSpec   Json?         // data shape / selected columns / pipeline
+  generationSteps Json?    // It Will Generate by AI
+
+  // Ownership
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String?
+  team       Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId     String?
+
+  // Placement
+  folder     Folder?       @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId   String?
+
+  file       File?         @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  fileId     String?
+
+  visibility Visibility    @default(PRIVATE)
+  slug       String        @unique // for public/shareable URL
+
+  // provenance
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  conversationId String?
+
+  messageId String @unique
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  versions   ChartVersion[]
+  shares     ChartShareLink[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([folderId])
+  @@index([fileId])
+  @@index([conversationId])
+  @@index([messageId])
+}
+
+model ChartVersion {
+  id        String  @id @default(cuid())
+  chart     Chart   @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  chartId   String
+  config    Json
+  notes     String?
+  createdBy User     @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt DateTime @default(now())
+
+  @@index([chartId])
+}
+
+model ChartShareLink {
+  id        String     @id @default(cuid())
+  chart     Chart      @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  chartId   String
+  token     String     @unique // random secret for LINK visibility
+  expiresAt DateTime?
+  createdBy User       @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt  DateTime  @default(now())
+}
