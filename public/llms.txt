@@ -1,0 +1,21 @@
+# Chartix
+
+> Transform your data into beautiful insights with Chartix. Upload your CSV or Excel files and let AI generate stunning visualizations in seconds, all without requiring any coding skills.
+
+Chartix is designed to help users easily analyze their data and create interactive visualizations. The platform emphasizes user-friendliness, allowing for simple file uploads and AI-powered suggestions for the best ways to visualize data. Users can create beautiful, interactive charts that bring their data to life, making it easier to uncover hidden insights and make informed decisions.
+
+## Main Features
+
+- **Easy Upload**: Users can simply drag and drop their CSV or Excel files to get started, streamlining the data input process.
+- **AI-Powered Analysis**: The AI analyzes uploaded data and suggests optimal visualizations, enhancing the user's ability to interpret their information.
+- **Interactive Charts**: The platform allows for the creation of visually appealing and interactive charts, making data exploration engaging.
+
+## User Accounts
+
+- [Create your account](https://chartix.vercel.app/sign-up): A sign-up page where new users can create an account by filling in their details or signing in with Google.
+- [Sign in to Chartix](https://chartix.vercel.app/sign-in): A login page for returning users to access their accounts, also offering the option to sign in with Google.
+
+## Getting Started
+
+- [Upload & Visualize Now](https://chartix.vercel.app/workspace): A call-to-action for users to start uploading their data and generating visualizations immediately.
+- [Learn More](https://chartix.vercel.app/#features): A link to further explore the features of Chartix and understand how it can benefit users in visualizing their data.

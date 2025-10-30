@@ -1,11 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { Send } from "lucide-react";
+import { useRef, useState } from "react";
+import { MessageSquareIcon, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from '@/components/ai-elements/conversation';
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+} from '@/components/ai-elements/prompt-input';
+import { Message, MessageContent } from "../ai-elements/message";
+import { Response } from "../ai-elements/response";
+import { nanoid } from "zod";
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import { usePathname } from "next/navigation";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -15,41 +37,42 @@ interface Message {
 }
 
 interface ChatSectionProps {
-  className?: string;
+  className?: string; 
 }
 
 export function ChatSection({ className }: ChatSectionProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "Give me sales by composite entity of customer & sales person",
-      timestamp: "Today at 4:43 PM",
-      isUser: true,
-    },
-    {
-      id: "2",
-      content:
-        "Create a composite key of Customer Name and Sales Person Group by Customer & Sales Person and sum the Net Sales Total",
-      timestamp: "Today at 4:44 PM",
-      isUser: false,
-    },
-    {
-      id: "3",
-      content: "sales by sales person",
-      timestamp: "Today at 4:44 PM",
-      isUser: true,
-    },
-    {
-      id: "4",
-      content:
-        "Group sales by sales person and sum the net sales total. Sort the total sales in descending order.",
-      timestamp: "Today at 4:44 PM",
-      isUser: false,
-    },
-  ]);
   const [inputValue, setInputValue] = useState("");
+  const {workspaceId} = useWorkspace()
+  console.log("🚀 ~ ChatSection ~ workspaceId:", workspaceId)
 
-  const handleSend = () => {
+  if(!workspaceId){
+    return null
+  }
+
+  const { messages,setMessages, sendMessage, status, } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: {
+        conversationId:workspaceId // Replace with actual conversation ID
+      }
+    }),
+    messages: [],
+    onError: (error: any) => {
+      console.error('Chat error:', error)
+    },
+    onToolCall: (toolCall) => {
+      console.log('Tool call:', toolCall)
+    },
+    onData: (part) => {
+      if (part.type === "data-notification") toast.success(part?.data?.message);
+      if (part.type === "data-chart") console.log("Chart:", part.data);
+    }
+  });
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+
+  const handleSendMessage = async() => {
     if (!inputValue.trim()) return;
 
     const newMessage: Message = {
@@ -59,14 +82,15 @@ export function ChatSection({ className }: ChatSectionProps) {
       isUser: true,
     };
 
-    setMessages([...messages, newMessage]);
+    sendMessage({text:inputValue})
     setInputValue("");
+    
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendMessage();
     }
   };
 
@@ -78,43 +102,51 @@ export function ChatSection({ className }: ChatSectionProps) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 px-6 py-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className="space-y-1">
-              {message.isUser ? (
-                <div className="bg-foreground text-background px-4 py-2.5 rounded-lg inline-block max-w-[85%]">
-                  <p className="text-sm">{message.content}</p>
-                </div>
-              ) : (
-                <div className="bg-muted px-4 py-2.5 rounded-lg max-w-[85%]">
-                  <p className="text-sm text-foreground">{message.content}</p>
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">{message.timestamp}</p>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+      <Conversation className="relative size-full" style={{ height: '498px' }}>
+        <ConversationContent>
+          {messages.length === 0 ? (
+            <ConversationEmptyState
+              icon={<MessageSquareIcon className="size-6" />}
+              title="Start a conversation"
+              description="Messages will appear here as the conversation progresses."
+            />
+          ) : (
+            messages.map(({ id, role, parts }, index) => (
+              <Message from={role} key={id}>
+                <MessageContent>
+                  {parts.map((part, partIndex) => {
+                    if (part.type === 'text') {
+                      return (
+                        <div key={partIndex} className="whitespace-pre-wrap">
+                          <Response>{part.text}</Response>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </MessageContent>
+              </Message>
+            ))
+          )}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
 
       {/* Input */}
       <div className="px-6 py-4 border-t">
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Press Enter to send, Shift+Enter for new line"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1"
-          />
-          <Button
-            size="icon"
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
-            className="shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <PromptInput globalDrop multiple onSubmit={handleSendMessage} className="w-full flex items-center">
+            <PromptInputBody className="w-full max-h-[100px] overflow-auto">
+              <PromptInputTextarea
+                onChange={(e) => setInputValue(e.target.value)}
+                ref={textareaRef}
+                value={inputValue}
+              />
+            </PromptInputBody>
+            <PromptInputToolbar className="flex justify-end">
+              <PromptInputSubmit status={status} />
+            </PromptInputToolbar>
+          </PromptInput>
         </div>
       </div>
     </div>

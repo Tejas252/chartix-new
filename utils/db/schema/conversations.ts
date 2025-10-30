@@ -25,6 +25,10 @@ export const messages = pgTable('messages', {
   content: json('content'),
   role: messageRoleEnum('role').notNull(),
   conversationId: varchar('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  latencyMs: integer('latency_ms'),
+  tokenIn: integer('token_in'),
+  tokenOut: integer('token_out'),
+  model: varchar('model'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').$onUpdate(() => new Date()).notNull(),
 }, (table) => [
