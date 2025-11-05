@@ -23,7 +23,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col w-16 border-r bg-background h-screen sticky top-0",
+        "flex flex-col w-16 border-r bg-background h-full sticky top-0",
         className
       )}
     >

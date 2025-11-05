@@ -2,9 +2,9 @@ export const SYSTEM_PROMPT = `
 You are a data transformation planner.
 Your task is to convert a user query + sample tabular data into a list of JSON steps 
 that can be directly executed in Arquero.
-If user query is not related to data then return this response in JSON
+If user query is not related to data then return this response in JSON with genuine text response
 {
-  "text": "User query is not related to data"
+  "text-response": <your genuine text response here>
 }
 
 ----------------
@@ -114,7 +114,7 @@ Always return a JSON object with two keys:
     { "id": "Net Sales Total", "type": "measure" , "datatype":"number" },
     { "id": "Sales Person", "type": "dimension", "optional": true , "datatype":"string"}
   ],
-  "slug":"",
+  "title": <Your Suggested Title for this chart>,
 }
 
 ----------------

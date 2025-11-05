@@ -13,6 +13,8 @@ import { markDownToJson } from "@/lib/utils/json-parser";
 import { processDataToChartFormat } from "@/server/services/generationStep";
 import { downloadFileFromStorage } from "@/lib/supabase/storage";
 import { authorizeUser, requireUser } from "@/lib/auth";
+import chartRepository from "@/server/models/charts/charts.query";
+import slugify from "slugify";
 
 export async function POST(req: NextRequest) {
   try {
@@ -256,7 +258,8 @@ export async function POST(req: NextRequest) {
               role: "ASSISTANT",
               content: assistantMessage,
             });
-          } catch (dbError) {
+
+          } catch (dbError) { 
             console.error("🚀 ~ POST ~ Error storing AI response:", dbError);
             // Continue even if DB storage fails
           }
@@ -265,6 +268,7 @@ export async function POST(req: NextRequest) {
           let parsedJson;
           try {
             parsedJson = markDownToJson(result.text);
+            console.log("PARSED JSON: ")
             console.dir(parsedJson, { depth: null });
           } catch (jsonError) {
             console.error("🚀 ~ POST ~ Error parsing JSON from AI response:", jsonError);
@@ -275,91 +279,129 @@ export async function POST(req: NextRequest) {
             });
             parsedJson = { steps: [], columns: [] }; // Fallback
           }
-
-          // Format the data for chart processing
-          let formattedData: Record<string, any[]> = {};
-          try {
-            if (data && data.length > 0) {
-              data[0].forEach((column, index) => {
-                formattedData[column] = data?.slice(1)?.map((row) => row?.[index]) || [];
+          if(parsedJson?.["text-response"]){
+            writer.write({ type: "text-start", id: streamId });
+            writer.write({
+              type: "data-notification",
+              data: { message: "User query is not related to data", level: "info" },
+              transient: true,
+            });
+            writer.write({
+              type: "text-delta",
+              id: streamId,
+              delta: parsedJson?.["text-response"],
+            });
+            writer.write({
+              type: "data-notification",
+              data: { message: "Response completed", level: "info" },
+              transient: true,
+            });
+            writer.write({ type: "text-end", id: streamId });
+            return;
+          }else{
+            // Format the data for chart processing
+            let formattedData: Record<string, any[]> = {};
+            try {
+              if (data && data.length > 0) {
+                data[0].forEach((column, index) => {
+                  formattedData[column] = data?.slice(1)?.map((row) => row?.[index]) || [];
+                });
+              }
+            } catch (formatError) {
+              console.error("🚀 ~ POST ~ Error formatting data:", formatError);
+              writer.write({
+                type: "data-notification",
+                data: { message: "Error formatting chart data", level: "error" },
+                transient: true,
               });
             }
-          } catch (formatError) {
-            console.error("🚀 ~ POST ~ Error formatting data:", formatError);
-            writer.write({
-              type: "data-notification",
-              data: { message: "Error formatting chart data", level: "error" },
-              transient: true,
+  
+            // Process data to chart format
+            let transformedData;
+            try {
+              transformedData = processDataToChartFormat(
+                formattedData,
+                parsedJson?.steps ? parsedJson?.steps : parsedJson,
+                parsedJson?.columns ? parsedJson?.columns : [],
+              );
+            } catch (processError) {
+              console.error("🚀 ~ POST ~ Error processing chart data:", processError);
+              writer.write({
+                type: "data-notification",
+                data: { message: "Error processing chart data", level: "error" },
+                transient: true,
+              });
+              transformedData = { transformed: [], normalized: { columns: [], rows: [] } }; // Fallback
+            }
+            const chartSlug = `${slugify(parsedJson?.title ?? "AI generated chart", { lower: true, strict: true })}-${nanoid()}`;
+            const chart = await chartRepository.createChart({
+              title: parsedJson?.title ?? "AI generated chart",
+              config: {
+                type: "line",
+              },
+              slug: chartSlug,
+              messageId: allMessages.messages[allMessages.messages.length - 1]?.id,
+              userId: con.conversations.userId,
+              teamId: con.conversations.teamId,
+              visibility: "PRIVATE",
+              conversationId,
+              fileId: con.files?.id,
+              generationSteps: parsedJson?.steps ? parsedJson?.steps : parsedJson,
+              dataSpec: transformedData,
+              library: "RECHARTS",
             });
-          }
-
-          // Process data to chart format
-          let transformedData;
-          try {
-            transformedData = processDataToChartFormat(
-              formattedData,
-              parsedJson?.steps ? parsedJson?.steps : parsedJson,
-              parsedJson?.columns ? parsedJson?.columns : []
-            );
-          } catch (processError) {
-            console.error("🚀 ~ POST ~ Error processing chart data:", processError);
-            writer.write({
-              type: "data-notification",
-              data: { message: "Error processing chart data", level: "error" },
-              transient: true,
-            });
-            transformedData = { transformed: [], normalized: { columns: [], rows: [] } }; // Fallback
-          }
-
-          // Stream text content progressively
-          writer.write({ type: "text-start", id: streamId });
-          
-          if (parsedJson?.steps && Array.isArray(parsedJson.steps)) {
-            for (const step of parsedJson.steps) {
-              if (step?.humanReadableFormat) {
-                for (const txt of step.humanReadableFormat.split(" ")) {
+  
+            // Stream text content progressively
+            writer.write({ type: "text-start", id: streamId });
+            
+            if (parsedJson?.steps && Array.isArray(parsedJson.steps)) {
+              for (const step of parsedJson.steps) {
+                if (step?.humanReadableFormat) {
+                  for (const txt of step.humanReadableFormat.split(" ")) {
+                    writer.write({
+                      type: "text-delta",
+                      id: streamId,
+                      delta: `${txt} `,
+                    });
+                  }
                   writer.write({
                     type: "text-delta",
                     id: streamId,
-                    delta: `${txt} `,
+                    delta: `\n`,
                   });
                 }
+              }
+            } else {
+              // Fallback: send the raw AI response if no steps are available
+              const words = result.text.split(" ");
+              for (const word of words) {
                 writer.write({
                   type: "text-delta",
                   id: streamId,
-                  delta: `\n`,
+                  delta: `${word} `,
                 });
               }
             }
-          } else {
-            // Fallback: send the raw AI response if no steps are available
-            const words = result.text.split(" ");
-            for (const word of words) {
+            
+            writer.write({ type: "text-end", id: streamId });
+  
+            // Stream metadata (custom chart data)
+            if (transformedData) {
               writer.write({
-                type: "text-delta",
-                id: streamId,
-                delta: `${word} `,
+                type: "data-chart",
+                id: "chart-data-1",                
+                data: {...transformedData,title: parsedJson?.title,id:chart?.id,config:chart?.config},
               });
             }
-          }
-          
-          writer.write({ type: "text-end", id: streamId });
-
-          // Stream metadata (custom chart data)
-          if (transformedData) {
+  
+            // Final notification
             writer.write({
-              type: "data-chart",
-              id: "chart-data-1",
-              data: transformedData,
+              type: "data-notification",
+              data: { message: "Response completed", level: "info" },
+              transient: true,
             });
           }
 
-          // Final notification
-          writer.write({
-            type: "data-notification",
-            data: { message: "Response completed", level: "info" },
-            transient: true,
-          });
         } catch (streamError) {
           console.error("🚀 ~ POST ~ Error in stream execution:", streamError);
           writer.write({

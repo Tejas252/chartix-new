@@ -4,13 +4,45 @@ import { Share2, Menu, PanelRightClose, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { ResizableChart } from "./resizable-chart";
+import { useChartStore } from "@/stores/chartStore";
+import { useEffect } from "react";
+import { ChartLoader } from "./chart-loader";
 
 export function ChartArea() {
   const { state, dispatch } = useWorkspace();
+  const { setData, setTitle, isLoading, data, title } = useChartStore();
+
+  // Initialize chart data if it doesn't exist and not loading
+  useEffect(() => {
+    // Initialize with some default chart data only once if no data and not loading
+    const chartState = useChartStore.getState();
+    if (!isLoading && chartState.data.columns.length === 0) {
+      setData({
+        columns: [
+          { id: "name", type: "dimension", datatype: "string" },
+          { id: "value", type: "measure", datatype: "number" }
+        ],
+        rows: [
+          { x: "A", y: 30 },
+          { x: "B", y: 40 },
+          { x: "C", y: 35 },
+          { x: "D", y: 50 },
+          { x: "E", y: 45 }
+        ]
+      });
+      // Set a default title if none exists
+      if (!chartState.title || chartState.title === 'Untitled Chart') {
+        setTitle('Untitled Chart');
+      }
+    }
+  }, [setData, setTitle, isLoading]); // This should run when setData, setTitle or isLoading changes
 
   const toggleChat = () => {
     dispatch({ type: "TOGGLE_CHAT" });
   };
+
+  const hasData = data.columns.length > 0 && data.rows.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -22,7 +54,7 @@ export function ChartArea() {
           </Button>
           <span>Home</span>
           <span>/</span>
-          <span className="text-foreground">How popular are America's richest?</span>
+          <span className="text-foreground">{title}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="gap-2">
@@ -45,22 +77,34 @@ export function ChartArea() {
         </div>
       </div>
 
-      {/* Chart Placeholder */}
-      <div className="flex-1 p-6">
-        <Card className="h-full flex items-center justify-center bg-muted/30">
-          <div className="text-center space-y-4">
-            <div className="w-full max-w-2xl mx-auto h-96 border-2 border-dashed border-border rounded-lg flex items-center justify-center">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-muted-foreground">
-                  Chart Preview
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Your chart will appear here
-                </p>
+      {/* Chart Area */}
+      <div className="flex-1 p-6 overflow-auto flex items-center justify-center">
+        <div className="bg-muted/30 p-0 max-h-full max-w-full w-full flex items-center justify-center">
+          {isLoading ? (
+            // Custom animated chart loader
+            <ChartLoader />
+          ) : hasData ? (
+            // Chart component when data is available
+            <ResizableChart />
+          ) : (
+            // Empty state when no data
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+              <div className="bg-muted rounded-full p-4 mb-4">
+                <Menu className="h-12 w-12 text-muted-foreground" />
               </div>
+              <h3 className="text-xl font-semibold mb-2">No chart data available</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                Start a conversation to generate chart data. Ask questions about your data to see visualizations here.
+              </p>
+              <Button variant="outline" onClick={() => {
+                // This would trigger a sample conversation or help the user get started
+                console.log("Help user get started with creating a chart");
+              }}>
+                Get Started
+              </Button>
             </div>
-          </div>
-        </Card>
+          )}
+        </div>
       </div>
     </div>
   );

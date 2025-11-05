@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import { UIMessage } from 'ai';
 
 // Define the state interface
 interface WorkspaceState {
   isChatVisible: boolean;
   workspaceId?: string;
+  messages: UIMessage[];
+  isMessagesLoading: boolean;
   // Future: Add more state properties here
   // chartData: any;
-  // messages: Message[];
   // selectedChartType: string;
   // etc.
 }
@@ -17,9 +19,12 @@ interface WorkspaceActions {
   showChat: () => void;
   hideChat: () => void;
   setWorkspaceId: (id:string) => void;
+  setMessages: (messages: UIMessage[]) => void;
+  addMessage: (message: UIMessage) => void;
+  setIsMessagesLoading: (isLoading: boolean) => void;
+  clearMessages: () => void;
   // Future: Add more actions here
   // setChartData: (data: any) => void;
-  // addMessage: (message: Message) => void;
   // updateChartType: (type: string) => void;
 }
 
@@ -27,21 +32,25 @@ interface WorkspaceActions {
 interface WorkspaceStore extends WorkspaceState, WorkspaceActions {}
 
 // Create the store
-const useWorkspaceStore = create<WorkspaceStore>((set) => ({
+const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   // Initial state
   isChatVisible: true,
   workspaceId:undefined,
+  messages: [],
+  isMessagesLoading: false,
 
   // Actions
   toggleChat: () => set((state) => ({ isChatVisible: !state.isChatVisible })),
   showChat: () => set({ isChatVisible: true }),
   hideChat: () => set({ isChatVisible: false }),
-  setWorkspaceId: (id:string) => set({workspaceId:id})
-
+  setWorkspaceId: (id:string) => set({workspaceId:id}),
+  setMessages: (messages: UIMessage[]) => set({ messages }),
+  addMessage: (message: UIMessage) => set((state) => ({ messages: [...state.messages, message] })),
+  setIsMessagesLoading: (isLoading: boolean) => set({ isMessagesLoading: isLoading }),
+  clearMessages: () => set({ messages: [] })
   
   // Future: Add more actions here
   // setChartData: (data) => set({ chartData: data }),
-  // addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
   // updateChartType: (type) => set({ selectedChartType: type }),
 }));
 

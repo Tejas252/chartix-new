@@ -7,11 +7,12 @@ import { NextRequest, NextResponse } from "next/server";
 export function parseAImessagesToUI(message: UIMessage) {
     const { parts } = message
     const textData = parts?.find((p) => p?.type === 'text')?.text as string
+    console.log("🚀 ~ parseAImessagesToUI ~ textData:", textData)
     const parsedJson = markDownToJson(textData)
-    return {
+    return [{
         type: "text",
-        text: parsedJson.steps?.map((s:any) => s.humanReadableFormat)?.join("\n")
-    }
+        text: parsedJson?.['text-response'] ? parsedJson?.['text-response'] :parsedJson.steps?.map((s:any) => s.humanReadableFormat)?.join("\n")
+    }]
 }
 
 

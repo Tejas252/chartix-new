@@ -1,4 +1,5 @@
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { UIMessage } from 'ai';
 
 // Custom hook to access workspace state and actions
 // This maintains the same interface as the previous context-based implementation
@@ -9,9 +10,20 @@ export function useWorkspace() {
   const hideChat = useWorkspaceStore((store) => store.hideChat);
   const workspaceId = useWorkspaceStore((store) => store.workspaceId)
   const setWorkspaceId = useWorkspaceStore((store) => store.setWorkspaceId)
+  const messages = useWorkspaceStore((store) => store.messages);
+  const setMessages = useWorkspaceStore((store) => store.setMessages);
+  const addMessage = useWorkspaceStore((store) => store.addMessage);
+  const isMessagesLoading = useWorkspaceStore((store) => store.isMessagesLoading);
+  const setIsMessagesLoading = useWorkspaceStore((store) => store.setIsMessagesLoading);
+  const clearMessages = useWorkspaceStore((store) => store.clearMessages);
 
   return {
-    state: { isChatVisible },
+    state: { 
+      isChatVisible,
+      messages,
+      isMessagesLoading,
+      workspaceId,
+    },
     dispatch: (action: { type: "TOGGLE_CHAT" | "SHOW_CHAT" | "HIDE_CHAT" }) => {
       switch (action.type) {
         case "TOGGLE_CHAT":
@@ -30,5 +42,11 @@ export function useWorkspace() {
     hideChat,
     workspaceId,
     setWorkspaceId,
+    messages,
+    setMessages,
+    addMessage,
+    isMessagesLoading,
+    setIsMessagesLoading,
+    clearMessages,
   };
 }

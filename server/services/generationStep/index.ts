@@ -11,8 +11,8 @@ type Step =
   | { type: "unroll"; column: string };
 
 type UniversalChartFormat = {
-  columns: { id: string; type: "dimension" | "measure"; optional?: boolean }[];
-  rows: { x: string; y: number; series?: string }[];
+  columns: { id: string; type: "dimension" | "measure"; optional?: boolean; datatype?: "string" | "number" | "date" }[];
+  rows: { x: string | number | Date; y: number | null; series?: string }[];
 };
 
 
@@ -168,9 +168,9 @@ export function normalizeForChart(data: any[]): UniversalChartFormat {
   if (!data.length) {
     return {
       columns: [
-        { id: "x", type: "dimension" },
-        { id: "y", type: "measure" },
-        { id: "series", type: "dimension", optional: true }
+        { id: "x", type: "dimension", datatype: "string" },
+        { id: "y", type: "measure", datatype: "number" },
+        { id: "series", type: "dimension", optional: true, datatype: "string" }
       ],
       rows: []
     };
@@ -184,9 +184,10 @@ export function normalizeForChart(data: any[]): UniversalChartFormat {
 
   for (const row of data) {
     for (const field of numericFields) {
+      const yValue = row[field];
       rows.push({
         x: String(row[xField]),
-        y: Number(row[field] ?? 0),
+        y: yValue === null || yValue === undefined ? null : Number(yValue),
         ...(numericFields.length > 1 ? { series: field } : {})
       });
     }
@@ -194,16 +195,16 @@ export function normalizeForChart(data: any[]): UniversalChartFormat {
 
   return {
     columns: [
-      { id: "x", type: "dimension" },
-      { id: "y", type: "measure" },
-      { id: "series", type: "dimension", optional: true }
+      { id: "x", type: "dimension", datatype: "string" },
+      { id: "y", type: "measure", datatype: "number" },
+      { id: "series", type: "dimension", optional: true, datatype: "string" }
     ],
     rows
   };
 }
 
 function toUniversalFormat(
-  columns: { id: string; type: "dimension" | "measure"; optional?: boolean }[],
+  columns: { id: string; type: "dimension" | "measure"; optional?: boolean; datatype?: "string" | "number" | "date" }[],
   data: Record<string, any>[]
 ): UniversalChartFormat {
   // identify column roles
@@ -216,9 +217,10 @@ function toUniversalFormat(
   }
 
   const rows = data.map(row => {
-    const formatted: { x: string; y: number; series?: string } = {
-      x: String(row[xCol]),
-      y: Number(row[yCol]),
+    const yValue = row[yCol];
+    const formatted: { x: string | number | Date; y: number | null; series?: string } = {
+      x: row[xCol],
+      y: yValue === null || yValue === undefined ? null : Number(yValue),
     };
     if (seriesCol) {
       formatted.series = String(row[seriesCol]);
@@ -229,10 +231,10 @@ function toUniversalFormat(
   return { columns, rows };
 }
 
-type UniversalRow = { x: string; y: number; series?: string };
+type UniversalRow = { x: string | number | Date; y: number | null; series?: string };
 
 function toUniversalFormatFromPivot(
-  columns: { id: string; type: "dimension" | "measure"; optional?: boolean }[],
+  columns: { id: string; type: "dimension" | "measure"; optional?: boolean; datatype?: "string" | "number" | "date" }[],
   data: Record<string, any>[]
 ): UniversalChartFormat {
   if (!data || data.length === 0) return { columns, rows: [] };
@@ -288,16 +290,16 @@ function toUniversalFormatFromPivot(
       if (v === undefined || v === null || v === "") continue;
       const num = Number(v);
       if (Number.isNaN(num)) continue;
-      rows.push({ x: String(xVal), y: num, series: m });
+      rows.push({ x: xVal, y: num, series: m });
     }
   }
 
   // If we detected pivot (multiple measure columns), ensure columns includes a series dimension
-  let outColumns: { id: string; type: "dimension" | "measure"; optional?: boolean | undefined; datatype?: string }[] = columns?.filter(c => c.type === "dimension" && c.id === xCol) || [];
+  let outColumns: { id: string; type: "dimension" | "measure"; optional?: boolean | undefined; datatype?: string | "number" | "date" }[] = columns?.filter(c => c.type === "dimension" && c.id === xCol) || [];
   if (pivotDetected && !columns.some(c => c.id === "series" && c.type === "dimension")) {
     outColumns = [
       ...columns,
-      ...(measureCols.map(m => ({ id: m, type: "measure",datatype:"number" }))),
+      ...(measureCols.map(m => ({ id: m, type: "measure", datatype: "number" }))),
     ];
   }
 
