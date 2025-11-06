@@ -10,7 +10,7 @@ import { UniversalChartFormat } from "@/types/chart";
 
 
 export default function WorkspacePage({ params }: { params: Promise<{ id: string }> }) {
-  const { state, workspaceId, setWorkspaceId, setMessages, setIsMessagesLoading } = useWorkspace();
+  const { state, workspaceId, setWorkspaceId, setMessages, setIsMessagesLoading, pendingPrompt, clearPendingPrompt } = useWorkspace();
   const { setData, setTitle, setChartId, setType, setDimensions, setLoading,height,width } = useChartStore();
   console.log("🚀 ~ WorkspacePage ~ workspaceId:", workspaceId)
   const { id } = use(params)
@@ -72,39 +72,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             setType(result.config.type);
           }
         }
-      } else {
-        console.error('Error fetching chart data:', result.error || result.message);
-        // Optionally set default data if API call fails
-        setData({
-          columns: [
-            { id: "name", type: "dimension", datatype: "string" },
-            { id: "value", type: "measure", datatype: "number" }
-          ],
-          rows: [
-            { x: "A", y: 30 },
-            { x: "B", y: 40 },
-            { x: "C", y: 35 },
-            { x: "D", y: 50 },
-            { x: "E", y: 45 }
-          ]
-        });
       }
     } catch (error) {
       console.error('Error fetching chart data:', error);
       // Set default data on error
-      setData({
-        columns: [
-          { id: "name", type: "dimension", datatype: "string" },
-          { id: "value", type: "measure", datatype: "number" }
-        ],
-        rows: [
-          { x: "A", y: 30 },
-          { x: "B", y: 40 },
-          { x: "C", y: 35 },
-          { x: "D", y: 50 },
-          { x: "E", y: 45 }
-        ]
-      });
+      // setData({
+      //   columns: [
+      //     { id: "name", type: "dimension", datatype: "string" },
+      //     { id: "value", type: "measure", datatype: "number" }
+      //   ],
+      //   rows: [
+      //     { x: "A", y: 30 },
+      //     { x: "B", y: 40 },
+      //     { x: "C", y: 35 },
+      //     { x: "D", y: 50 },
+      //     { x: "E", y: 45 }
+      //   ]
+      // });
     } finally {
       setLoading(false); // Set loading state to false when done
     }

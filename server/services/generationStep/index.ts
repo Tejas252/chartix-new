@@ -85,12 +85,13 @@ export function executeSteps(data: object, steps: Step[]): any[] {
         let aggSpec: Record<string, any> = {};
         if (step.numericalColumnsToAggregate) {
           for (const [col, agg] of Object.entries(step.numericalColumnsToAggregate)) {
+            // @ts-ignore
             aggSpec[col] = aq.op[agg](col); // ✅ no closures, just op.sum("col")
           }
         }
 
         if (Object.keys(aggSpec).length > 0) {
-          console.log(...step.groupByColumns,aggSpec,t.columnNames())
+          console.log(...step.groupByColumns, aggSpec, t.columnNames())
           t = t.groupby(...step.groupByColumns).rollup(aggSpec);
         } else {
           t = t.groupby(...step.groupByColumns);
@@ -105,41 +106,42 @@ export function executeSteps(data: object, steps: Step[]): any[] {
         break;
 
       case "pivot": {
-        if(step.groupby?.length){
+        if (step.groupby?.length) {
 
           // Materialize table
           const rows = t.objects();
-  
+
           // Group rows by groupby keys
           const grouped = new Map<string, any>();
-  
-          for (const row of rows) {
+
+          for (const rowData of rows) {
+            const row = rowData as any
             // 🔑 Build composite key (like "Jan||Furniture")
             const groupKey = step.groupby.map(g => row[g]).join("||");
-  
+
             if (!grouped.has(groupKey)) {
               grouped.set(
                 groupKey,
                 Object.fromEntries(step.groupby.map(g => [g, row[g]])) // init with group keys
               );
             }
-  
+
             const outRow = grouped.get(groupKey);
-  
+
             // assign pivoted column
             outRow[row[step.keyColumn]] = row[step.valueColumn];
           }
-  
+
           // ✅ Convert grouped map → row array
           const pivoted = Array.from(grouped.values());
-  
+
           // ✅ Convert row array → column dictionary
           const pivotedColumns = rowsToColumns(pivoted);
-  
+
           // ✅ Reinitialize table
           t = aq.table(pivotedColumns);
-        }else{
-          t = t.pivot(step.keyColumn, step.aggregator ? {value: d => (aq.op as any)[step.aggregator](d[step.valueColumn])} :step.valueColumn);
+        } else {
+          t = t.pivot(step.keyColumn, step.aggregator ? { value: d => (aq.op as any)[step.aggregator](d[step.valueColumn]) } : step.valueColumn);
         }
         break;
       }
@@ -300,9 +302,10 @@ function toUniversalFormatFromPivot(
     outColumns = [
       ...columns,
       ...(measureCols.map(m => ({ id: m, type: "measure", datatype: "number" }))),
-    ];
+    ] as { id: string; type: "dimension" | "measure"; optional?: boolean; datatype?: "string" | "number" | "date" }[];
   }
 
+  // @ts-ignore
   return { columns: outColumns, rows };
 }
 
@@ -339,7 +342,7 @@ export function processDataToChartFormat(
 ): { transformed: any[], normalized: UniversalChartFormat } {
   const transformed = executeSteps(rawData, steps);
   const isPivoteInclude = steps.some(step => step.type === "pivot");
-  if(isPivoteInclude){
+  if (isPivoteInclude) {
     return { transformed, normalized: toUniversalFormatFromPivot(columns, transformed) }
   }
   return { transformed, normalized: toUniversalFormat(columns, transformed) }

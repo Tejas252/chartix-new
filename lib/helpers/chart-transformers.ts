@@ -9,7 +9,7 @@ export function transformToApex(
 ) {
   let { rows } = data;
 
-  rows = rows.filter((row)=> !['null','undefined','NaN',undefined,null,'']?.includes(row?.y))
+  rows = rows.filter((row: any) => !['null', 'undefined', 'NaN', undefined, null, '']?.includes(row?.y))
 
 
   let series: any[] = [];

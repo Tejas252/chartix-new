@@ -30,6 +30,18 @@ export function FloatingOptions() {
   const setSizeOpen = useChartStore(state => state.setSizeOpen);
   const setChartTypeOpen = useChartStore(state => state.setChartTypeOpen);
     console.log("🚀 ~ FloatingOptions ~ sizeOpen:", sizeOpen);
+    
+  // Define preset sizes for popular formats
+  const presetSizes = [
+    { name: "Instagram Reel", width: 1080, height: 1920, ratio: "9:16" },
+    { name: "YouTube Thumbnail", width: 1280, height: 720, ratio: "16:9" },
+    { name: "Twitter Post", width: 1200, height: 675, ratio: "16:9" },
+    { name: "Facebook Post", width: 1200, height: 630, ratio: "1.9:1" },
+    { name: "LinkedIn Post", width: 1200, height: 627, ratio: "1.9:1" },
+    { name: "Google Sheets", width: 800, height: 600, ratio: "4:3" },
+    { name: "Presentation", width: 1024, height: 768, ratio: "4:3" },
+    { name: "Square", width: 800, height: 800, ratio: "1:1" },
+  ];
   
   const [sizeInputs, setSizeInputs] = useState({ 
     width: width.toString(), 
@@ -43,6 +55,42 @@ export function FloatingOptions() {
       height: height.toString()
     });
   }, [width, height]);
+
+  // Function to apply preset size
+  const applyPresetSize = async (preset: typeof presetSizes[0]) => {
+    // Update local store
+    setDimensions(preset.width, preset.height);
+    
+    // Only update if chartId exists
+    if (!chartId) {
+      console.warn('No chart ID available, skipping API update');
+      setSizeOpen(false);
+      return;
+    }
+    
+    // Send update to backend API
+    try {
+      const response = await fetch('/api/charts/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chartId,
+          width: preset.width,
+          height: preset.height
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to update chart size:', await response.json());
+      }
+    } catch (error) {
+      console.error('Error updating chart size:', error);
+    }
+    
+    setSizeOpen(false);
+  };
 
   const handleSizeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,33 +192,57 @@ export function FloatingOptions() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-4 z-[100] border-2" align="center">
-                <form onSubmit={handleSizeSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="width">Width</Label>
-                    <Input
-                      id="width"
-                      type="number"
-                      value={sizeInputs.width}
-                      onChange={(e) => setSizeInputs({...sizeInputs, width: e.target.value})}
-                      min="300"
-                      max="1200"
-                    />
+                {/* Preset Sizes Section */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Preset Sizes</h3>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 -mr-1 custom-scrollbar">
+                    {presetSizes.map((preset, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs p-2 h-auto py-3"
+                        onClick={() => applyPresetSize(preset)}
+                      >
+                        <div className="text-center">
+                          <div className="font-medium truncate">{preset.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{preset.width}×{preset.height}</div>
+                        </div>
+                      </Button>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      value={sizeInputs.height}
-                      onChange={(e) => setSizeInputs({...sizeInputs, height: e.target.value})}
-                      min="200"
-                      max="800"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Apply
-                  </Button>
-                </form>
+                </div>
+                
+                {/* Custom Size Form */}
+                <div className="border-t pt-4">
+                  <form onSubmit={handleSizeSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="width">Width</Label>
+                      <Input
+                        id="width"
+                        type="number"
+                        value={sizeInputs.width}
+                        onChange={(e) => setSizeInputs({...sizeInputs, width: e.target.value})}
+                        min="300"
+                        max="1200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="height">Height</Label>
+                      <Input
+                        id="height"
+                        type="number"
+                        value={sizeInputs.height}
+                        onChange={(e) => setSizeInputs({...sizeInputs, height: e.target.value})}
+                        min="200"
+                        max="800"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">
+                      Apply Custom Size
+                    </Button>
+                  </form>
+                </div>
               </PopoverContent>
             </Popover>
             
@@ -247,33 +319,57 @@ export function FloatingOptions() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-4 z-[100] border-2" align="center">
-                <form onSubmit={handleSizeSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="width">Width</Label>
-                    <Input
-                      id="width"
-                      type="number"
-                      value={sizeInputs.width}
-                      onChange={(e) => setSizeInputs({...sizeInputs, width: e.target.value})}
-                      min="300"
-                      max="1200"
-                    />
+                {/* Preset Sizes Section */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Preset Sizes</h3>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 -mr-1 custom-scrollbar">
+                    {presetSizes.map((preset, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs p-2 h-auto py-3"
+                        onClick={() => applyPresetSize(preset)}
+                      >
+                        <div className="text-center">
+                          <div className="font-medium truncate">{preset.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{preset.width}×{preset.height}</div>
+                        </div>
+                      </Button>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      value={sizeInputs.height}
-                      onChange={(e) => setSizeInputs({...sizeInputs, height: e.target.value})}
-                      min="200"
-                      max="800"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Apply
-                  </Button>
-                </form>
+                </div>
+                
+                {/* Custom Size Form */}
+                <div className="border-t pt-4">
+                  <form onSubmit={handleSizeSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="width">Width</Label>
+                      <Input
+                        id="width"
+                        type="number"
+                        value={sizeInputs.width}
+                        onChange={(e) => setSizeInputs({...sizeInputs, width: e.target.value})}
+                        min="300"
+                        max="1200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="height">Height</Label>
+                      <Input
+                        id="height"
+                        type="number"
+                        value={sizeInputs.height}
+                        onChange={(e) => setSizeInputs({...sizeInputs, height: e.target.value})}
+                        min="200"
+                        max="800"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">
+                      Apply Custom Size
+                    </Button>
+                  </form>
+                </div>
               </PopoverContent>
             </Popover>
             

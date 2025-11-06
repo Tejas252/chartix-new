@@ -39,17 +39,17 @@ interface Message {
 }
 
 interface ChatSectionProps {
-  className?: string; 
+  className?: string;
 }
 
 function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { workspaceId: string }) {
   const [inputValue, setInputValue] = useState("");
   const { setData } = useChartStore()
-  const { setMessages, messages: storeMessages, isMessagesLoading } = useWorkspace()
+  const { setMessages, messages: storeMessages, isMessagesLoading, pendingPrompt, clearPendingPrompt } = useWorkspace()
   console.log("🚀 ~ ChatSectionContent ~ storeMessages:", storeMessages)
   console.log("🚀 ~ ChatSectionContent ~ isMessagesLoading:", isMessagesLoading)
-  
-  const { messages, setMessages:updateMessages, sendMessage, status } = useChat({
+
+  const { messages, setMessages: updateMessages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: {
@@ -64,10 +64,11 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
       console.log('Tool call:', toolCall)
     },
     onData: (part) => {
-      if (part.type === "data-notification") toast.success(part?.data?.message);
+      const data = part?.data as any
+      if (part.type === "data-notification") toast.success(data?.message);
       if (part.type === "data-chart") {
         console.log("🚀 ~ onData ~ part.data:", part)
-        setData(part?.data?.normalized as UniversalChartFormat);
+        setData(data?.normalized as UniversalChartFormat);
       }
     }
   });
@@ -76,7 +77,7 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
   useEffect(() => {
     setMessages(messages);
   }, [messages, setMessages]);
-  
+
   // When storeMessages change (newly loaded from API after initial render), update the chat messages
   useEffect(() => {
     if (storeMessages && storeMessages.length > 0 && messages.length === 0) {
@@ -86,13 +87,23 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
     }
   }, [storeMessages, messages, updateMessages]);
 
+  // Send pending prompt if exists when chat section loads
+  useEffect(() => {
+    if (pendingPrompt && workspaceId) {
+      // Send the pending prompt as a message
+      sendMessage({ text: pendingPrompt });
+      // Clear the pending prompt after sending
+      clearPendingPrompt();
+    }
+  }, [pendingPrompt, workspaceId, sendMessage, clearPendingPrompt]);
+
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSendMessage = async() => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    sendMessage({text:inputValue})
+    sendMessage({ text: inputValue })
     setInputValue("");
   };
 
@@ -128,7 +139,7 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
             />
           ) : (
             messages.map(({ id, role, parts }, index) => (
-              <Message from={role?.toLowerCase()} key={id}>
+              <Message from={role?.toLowerCase() as "user" | "assistant"} key={id}>
                 <MessageContent>
                   {parts.map((part, partIndex) => {
                     if (part.type === 'text') {
@@ -137,7 +148,7 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
                           <Response>{part.text}</Response>
                         </div>
                       );
-                    }else if("text-response" in part){
+                    } else if ("text-response" in part) {
                       return (
                         <div key={partIndex} className="whitespace-pre-wrap">
                           <Response>{part?.["text-response"] as string}</Response>
@@ -176,10 +187,10 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
 }
 
 export function ChatSection({ className }: ChatSectionProps) {
-  const {workspaceId} = useWorkspace()
+  const { workspaceId } = useWorkspace()
   console.log("🚀 ~ ChatSection ~ workspaceId:", workspaceId)
 
-  if(!workspaceId){
+  if (!workspaceId) {
     return null
   }
 

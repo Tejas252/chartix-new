@@ -40,7 +40,7 @@ export function FileUploader() {
   const [isLoading, setIsLoading] = useState(false);
   const [showData, setShowData] = useState(false);
   const [fileUploadStatus, setFileUploadStatus] = useState<Record<string, FileUploadStatus>>({});
-  const {workspaceId,setWorkspaceId} = useWorkspace()
+  const {workspaceId,setWorkspaceId, setPendingPrompt} = useWorkspace()
   const router = useRouter()
 
   // File upload mutation
@@ -116,6 +116,8 @@ export function FileUploader() {
 
       setWorkspaceId(uploadResult.result.conversationId)
 
+      // Store the prompt to be sent after redirect
+      setPendingPrompt(prompt);
       
       // Here you would typically send the file and prompt to your API using the upload result information
       // For now, we'll just simulate a delay

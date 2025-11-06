@@ -16,6 +16,9 @@ export function useWorkspace() {
   const isMessagesLoading = useWorkspaceStore((store) => store.isMessagesLoading);
   const setIsMessagesLoading = useWorkspaceStore((store) => store.setIsMessagesLoading);
   const clearMessages = useWorkspaceStore((store) => store.clearMessages);
+  const pendingPrompt = useWorkspaceStore((store) => store.pendingPrompt);
+  const setPendingPrompt = useWorkspaceStore((store) => store.setPendingPrompt);
+  const clearPendingPrompt = useWorkspaceStore((store) => store.clearPendingPrompt);
 
   return {
     state: { 
@@ -23,6 +26,7 @@ export function useWorkspace() {
       messages,
       isMessagesLoading,
       workspaceId,
+      pendingPrompt,
     },
     dispatch: (action: { type: "TOGGLE_CHAT" | "SHOW_CHAT" | "HIDE_CHAT" }) => {
       switch (action.type) {
@@ -48,5 +52,8 @@ export function useWorkspace() {
     isMessagesLoading,
     setIsMessagesLoading,
     clearMessages,
+    pendingPrompt,
+    setPendingPrompt,
+    clearPendingPrompt,
   };
 }
