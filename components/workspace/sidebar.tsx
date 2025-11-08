@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from 'react'
 import { Plus, Home, Search, LayoutGrid, Moon, Sun, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useUserStore } from '@/stores/userStore';
+import { UserDropdown } from './user-dropdown';
 
 interface SidebarProps {
   className?: string;
@@ -12,12 +15,17 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const { theme, setTheme } = useTheme();
+  const { user, fetchUser } = useUserStore();
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   const navItems = [
     { icon: Home, label: "Home", href: "/workspace" },
-    { icon: Search, label: "Search", href: "#" },
-    { icon: LayoutGrid, label: "Projects", href: "#" },
-    { icon: Clock, label: "Recent", href: "#" },
+    { icon: Search, label: "Search", href: "/workspace#conversations" },
+    // { icon: LayoutGrid, label: "Projects", href: "#" },
+    // { icon: Clock, label: "Recent", href: "#" },
   ];
 
   return (
@@ -29,6 +37,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Top Section */}
       <div className="flex flex-col items-center py-4 space-y-4">
+        <Link href={"/workspace"}>
         <Button
           size="icon"
           variant="ghost"
@@ -36,6 +45,7 @@ export function Sidebar({ className }: SidebarProps) {
         >
           <Plus className="h-5 w-5" />
         </Button>
+        </Link>
       </div>
 
       {/* Navigation Items */}
@@ -69,17 +79,15 @@ export function Sidebar({ className }: SidebarProps) {
             <Moon className="h-5 w-5" />
           )}
         </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-10 w-10 rounded-lg hover:bg-primary/10"
-          title="Settings"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-        <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold">
-          U
-        </div>
+        
+        {/* User Profile */}
+        {user && (
+          <UserDropdown 
+            name={user.name} 
+            email={user.email} 
+            imageUrl={user.imageUrl} 
+          />
+        )}
       </div>
     </aside>
   );

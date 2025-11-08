@@ -64,7 +64,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages to dashboard
   if (user && (request.nextUrl.pathname.startsWith("/auth/login") || request.nextUrl.pathname.startsWith("/auth/sign-up"))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/protected";
+    url.pathname = "/workspace";
     return NextResponse.redirect(url);
   }
 

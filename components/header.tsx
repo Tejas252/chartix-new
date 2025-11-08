@@ -66,7 +66,7 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <Button variant="ghost" asChild className="hidden md:inline-flex">
-                <Link href="/protected">Dashboard</Link>
+                <Link href="/workspace">Dashboard</Link>
               </Button>
               <Button variant="outline" onClick={handleSignOut}>
                 Sign Out
