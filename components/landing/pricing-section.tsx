@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function PricingSection() {
   return (
@@ -87,9 +88,11 @@ export default function PricingSection() {
               </div>
             </CardContent>
             <CardFooter>
+              <Link href={"mailto:savaliyatejas108@gmail.com"}>
               <Button className="w-full bg-primary hover:bg-primary/90">
                 Contact Me for Work
               </Button>
+              </Link>
             </CardFooter>
           </Card>
         </div>
