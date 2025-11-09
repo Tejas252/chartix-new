@@ -18,19 +18,19 @@ export function ChartArea() {
     // Initialize with some default chart data only once if no data and not loading
     const chartState = useChartStore.getState();
     if (!isLoading && chartState.data.columns.length === 0) {
-      setData({
-        columns: [
-          { id: "name", type: "dimension", datatype: "string" },
-          { id: "value", type: "measure", datatype: "number" }
-        ],
-        rows: [
-          { x: "A", y: 30 },
-          { x: "B", y: 40 },
-          { x: "C", y: 35 },
-          { x: "D", y: 50 },
-          { x: "E", y: 45 }
-        ]
-      });
+      // setData({
+      //   columns: [
+      //     { id: "name", type: "dimension", datatype: "string" },
+      //     { id: "value", type: "measure", datatype: "number" }
+      //   ],
+      //   rows: [
+      //     { x: "A", y: 30 },
+      //     { x: "B", y: 40 },
+      //     { x: "C", y: 35 },
+      //     { x: "D", y: 50 },
+      //     { x: "E", y: 45 }
+      //   ]
+      // });
       // Set a default title if none exists
       if (!chartState.title || chartState.title === 'Untitled Chart') {
         setTitle('Untitled Chart');
