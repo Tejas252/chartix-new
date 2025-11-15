@@ -51,9 +51,11 @@ export default function PricingSection() {
               </ul>
             </CardContent>
             <CardFooter>
+              <Link href={"/workspace"}>
               <Button className="w-full" variant="outline">
                 Get Started - Free Forever
               </Button>
+              </Link>
             </CardFooter>
           </Card>
 

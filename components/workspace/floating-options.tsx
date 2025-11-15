@@ -293,13 +293,73 @@ export function FloatingOptions() {
               </PopoverContent>
             </Popover>
 
+                        {/* Color option with coming soon - this is the 3rd option (index 2) */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-primary/10"
-              onClick={options[4].action}
+              className="h-9 w-9 rounded-full hover:bg-primary/10 cursor-not-allowed relative group"
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.add('blur-sm');
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.remove('blur-sm');
+              }}
             >
-              <Database className="h-4 w-4" />
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap -translate-y-1">
+                Coming Soon
+              </div>
+              <span className="blur-content blur-sm">
+                <Palette className="h-4 w-4" />
+              </span>
+            </Button>
+
+            {/* Annotate option with coming soon - this is the 4th option (index 3) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-primary/10 cursor-not-allowed relative group"
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.add('blur-sm');
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.remove('blur-sm');
+              }}
+            >
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap -translate-y-1">
+                Coming Soon
+              </div>
+              <span className="blur-content blur-sm">
+                <MessageSquare className="h-4 w-4" />
+              </span>
+            </Button>
+
+            {/* Edit data option with coming soon - this is the 5th option (index 4) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-primary/10 cursor-not-allowed relative group"
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.add('blur-sm');
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.querySelector('.blur-content')?.classList.remove('blur-sm');
+              }}
+            >
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap -translate-y-1">
+                Coming Soon
+              </div>
+              <span className="blur-content blur-sm">
+                <Database className="h-4 w-4" />
+              </span>
             </Button>
           </div>
         </div>
@@ -401,18 +461,44 @@ export function FloatingOptions() {
               </PopoverContent>
             </Popover>
             
-            {options.slice(2).map((option, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                size="sm"
-                className="gap-2 rounded-full hover:bg-primary/10"
-                onClick={option.action}
-              >
-                <option.icon className="h-4 w-4" />
-                <span className="text-sm">{option.label}</span>
-              </Button>
-            ))}
+            {options.slice(2).map((option, index) => {
+              const isComingSoon = option.label === "Color" || option.label === "Annotate" || option.label === "Edit data";
+              return (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  className={`gap-2 rounded-full hover:bg-primary/10 ${isComingSoon ? 'cursor-not-allowed relative group' : ''}`}
+                  onClick={(e) => {
+                    if (isComingSoon) {
+                      e.preventDefault();
+                      return;
+                    }
+                    option.action();
+                  }}
+                  onMouseEnter={(e) => {
+                    if (isComingSoon) {
+                      e.currentTarget.querySelector('.blur-content')?.classList.add('blur-sm');
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isComingSoon) {
+                      e.currentTarget.querySelector('.blur-content')?.classList.remove('blur-sm');
+                    }
+                  }}
+                >
+                  {isComingSoon && (
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap -translate-y-1">
+                      Coming Soon
+                    </div>
+                  )}
+                  <span className={`blur-content ${isComingSoon ? 'blur-sm' : ''}`}>
+                    <option.icon className="h-4 w-4" />
+                    <span className="text-sm">{option.label}</span>
+                  </span>
+                </Button>
+              );
+            })}
           </div>
         </div>
       )}

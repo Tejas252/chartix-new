@@ -337,7 +337,7 @@ export async function POST(req: NextRequest) {
             const chart = await chartRepository.createChart({
               title: parsedJson?.title ?? "AI generated chart",
               config: {
-                type: "line",
+                type: "bar",
               },
               slug: chartSlug,
               messageId: allMessages.messages[allMessages.messages.length - 1]?.id,

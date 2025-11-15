@@ -106,10 +106,10 @@ export function BentoGrid() {
                   
                   {/* Text Content */}
                   <div className="flex flex-col h-full">
-                    <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors duration-300 mb-3 ${isLarge ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>
+                    <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors duration-300 mb-3 ${isLarge ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-lg sm:text-xl lg:text-2xl'}`}>
                       {feature.title}
                     </h3>
-                    <p className={`text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300 flex-grow ${isLarge ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
+                    <p className={`text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300 flex-grow ${isLarge ? 'text-base sm:text-lg lg:text-xl' : 'text-sm sm:text-base lg:text-lg'}`}>
                       {feature.description}
                     </p>
                   </div>

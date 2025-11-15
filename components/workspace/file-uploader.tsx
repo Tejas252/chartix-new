@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, X, UploadCloud, BarChart2, Upload } from "lucide-react";
+import { FileText, X, UploadCloud, BarChart2, Upload, Download } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
@@ -221,15 +221,15 @@ export function FileUploader() {
           )}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-col items-center justify-center space-y-3">
+          <div className="flex flex-col items-center justify-center space-y-3 p-4">
             <UploadCloud className="h-10 w-10 text-muted-foreground" />
             <div>
-              <p className="font-medium text-foreground">
+              <p className="font-medium text-foreground text-center">
                 {isDragActive
                   ? "Drop the files here"
                   : "Drag & drop file here, or click to select file"}
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 text-center">
                 Supports CSV and Excel files (single file, max 5MB)
               </p>
             </div>
@@ -251,7 +251,7 @@ export function FileUploader() {
                   <div
                     key={fileId} // Changed key to include index for proper identification
                     className={cn(
-                      "flex items-center justify-between p-3 border rounded-lg",
+                      "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-lg",
                       status?.status === 'uploading' && 'bg-blue-50/30 border-blue-200',
                       status?.status === 'success' && 'bg-green-50/30 border-green-200',
                       status?.status === 'error' && 'bg-red-50/30 border-red-200'
@@ -319,20 +319,40 @@ export function FileUploader() {
         )}
 
           <div className="mt-8">
-            <div className="relative rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20 p-6 shadow-sm">
+            <div className="relative rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20 p-4 sm:p-6 shadow-sm">
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-                    <BarChart2 className="h-5 w-5 text-primary" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                      <BarChart2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <label htmlFor="prompt" className="text-base font-semibold text-foreground">
+                        Create Visualization
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        Describe what you'd like to see from your data
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="prompt" className="text-base font-semibold text-foreground">
-                      Create Visualization
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      Describe what you'd like to see from your data
-                    </p>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      // Create a temporary link and trigger the download
+                      const link = document.createElement('a');
+                      link.href = 'https://dmbkuxvjcbrqzjvyikpz.supabase.co/storage/v1/object/sign/chartix-new/uploads/obr16xibd1b7exgpgcr05br7/1761302775957-Sales_Report_new_formatted.xlsx?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80MzE0NGYxOS03OWJkLTQ3MDAtYWZmYi01OTdjYjQ4NDBjYzQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjaGFydGl4LW5ldy91cGxvYWRzL29icjE2eGliZDFiN2V4Z3BnY3IwNWJyNy8xNzYxMzAyNzc1OTU3LVNhbGVzX1JlcG9ydF9uZXdfZm9ybWF0dGVkLnhsc3giLCJpYXQiOjE3NjMyMzYxMTQsImV4cCI6NDkxNjgzNjExNH0.KguLSuNaEwYyM2BqWzg7WFIL7aTjkrWetHgsN8UmsQY';
+                      link.download = 'sample-data.xlsx';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Sample</span>
+                  </Button>
                 </div>
                 
                 <div className="space-y-3">
@@ -350,15 +370,15 @@ export function FileUploader() {
                     className="min-h-[100px] resize-none border-border/50 bg-background/50 backdrop-blur-sm transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                   />
                   
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-xs text-muted-foreground self-start sm:self-center">
                       Press <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">Enter</kbd> to generate • <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">Shift + Enter</kbd> for new line
                     </p>
                     <Button 
                       onClick={handleGenerateVisualization} 
                       disabled={!prompt.trim() || isLoading || uploadFileMutation.isPending}
                       size="lg"
-                      className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto"
                     >
                       {(isLoading || uploadFileMutation.isPending) ? (
                         <span className="flex items-center gap-2">

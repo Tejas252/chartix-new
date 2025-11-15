@@ -92,6 +92,7 @@ function ChatSectionContent({ className, workspaceId }: ChatSectionProps & { wor
     if (pendingPrompt && workspaceId) {
       // Send the pending prompt as a message
       sendMessage({ text: pendingPrompt });
+      setMessages([{id:"firstMessage",parts:[{ type:"text",text: pendingPrompt }],role:"user"}])
       // Clear the pending prompt after sending
       clearPendingPrompt();
     }
